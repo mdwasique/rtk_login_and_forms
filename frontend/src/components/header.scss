@@ -1,0 +1,21 @@
+header {
+  background-color: gray;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  border-radius: 5px;
+
+  > span {
+    font-size: 30px;
+    font-weight: 600;
+  }
+  > ul {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    gap: 30px;
+    > li {
+    }
+  }
+}

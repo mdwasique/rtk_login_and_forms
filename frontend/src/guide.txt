@@ -1,0 +1,240 @@
+quick referene to add customer details form with rtk and rtk query
+
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+const baseQuery = fetchBaseQuery({
+  baseUrl: "", // Add your base URL here
+});
+
+export const apiSlice = createApi({
+  reducerPath: "apiSlice",
+  baseQuery,
+  tagTypes: ["User"],
+  endpoints: (builder) => ({}), // You can add endpoints later if needed
+});
+
+// authSlice.js
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
+  userInfo: localStorage.getItem("userInfo")
+    ? JSON.parse(localStorage.getItem("userInfo"))
+    : null,
+};
+
+const authSlice = createSlice({
+  name: "auth",
+  initialState,
+  reducers: {
+    setCredentials: (state, action) => {
+      state.userInfo = action.payload;
+      localStorage.setItem("userInfo", JSON.stringify(action.payload));
+    },
+    logout: (state) => {
+      state.userInfo = null;
+      localStorage.removeItem("userInfo");
+    },
+  },
+});
+
+export const { setCredentials, logout } = authSlice.actions;
+
+export default authSlice.reducer;
+
+// customerSlice.js
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
+  customerInfo: null,
+};
+
+const customerSlice = createSlice({
+  name: "customer",
+  initialState,
+  reducers: {
+    setCustomerInfo: (state, action) => {
+      state.customerInfo = action.payload;
+    },
+  },
+});
+
+export const { setCustomerInfo } = customerSlice.actions;
+
+export default customerSlice.reducer;
+
+// customersApiSlice.js
+import { apiSlice } from "./apiSlice";
+
+const CUSTOMERS_URL = "/api/customers"; // Define your customers endpoint
+import { apiSlice } from "./apiSlice";
+
+const CUSTOMERS_URL = "/api/customers"; // Define your customers endpoint
+
+export const customersApiSlice = apiSlice.injectEndpoints({
+  endpoints: (builder) => ({
+    // Add endpoint for fetching all customers
+    fetchCustomers: builder.query({
+      query: () => `${CUSTOMERS_URL}`, // Assuming this endpoint returns all customers
+    }),
+
+    // Add endpoint for fetching a single customer by ID
+    fetchCustomerById: builder.query({
+      query: (customerId) => `${CUSTOMERS_URL}/${customerId}`, // Assuming this endpoint fetches a customer by ID
+    }),
+
+    // Add endpoint for updating a customer
+    updateCustomer: builder.mutation({
+      query: ({ customerId, data }) => ({
+        url: `${CUSTOMERS_URL}/${customerId}`, // Assuming this endpoint updates a customer by ID
+        method: "PUT",
+        body: data,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+      }),
+    }),
+
+    // Add endpoint for deleting a customer
+    deleteCustomer: builder.mutation({
+      query: (customerId) => ({
+        url: `${CUSTOMERS_URL}/${customerId}`, // Assuming this endpoint deletes a customer by ID
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+      }),
+    }),
+
+    // Add other endpoints as needed...
+  }),
+});
+
+export const {
+  useFetchCustomersQuery,
+  useFetchCustomerByIdQuery,
+  useUpdateCustomerMutation,
+  useDeleteCustomerMutation,
+} = customersApiSlice;
+
+
+export const { useAddCustomerMutation } = customersApiSlice;
+
+// In your component where you handle the form submission:
+import React, { useState } from "react";
+import { useAddCustomerMutation } from "./customersApiSlice";
+import { setCustomerInfo } from "./customerSlice";
+
+function CustomerForm() {
+  const [customerData, setCustomerData] = useState({
+    name: "",
+    industry: "",
+    country: "",
+  });
+  const [addCustomer, { isLoading }] = useAddCustomerMutation();
+  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setCustomerData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const { data } = await addCustomer(customerData).unwrap();
+      // Optionally dispatch an action to update local state with the new customer info
+      dispatch(setCustomerInfo(data));
+      // Reset the form
+      setCustomerData({
+        name: "",
+        industry: "",
+        country: "",
+      });
+    } catch (error) {
+      console.error("Failed to add customer:", error);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        name="name"
+        value={customerData.name}
+        onChange={handleChange}
+        placeholder="Customer Name"
+        required
+      />
+      <input
+        type="text"
+        name="industry"
+        value={customerData.industry}
+        onChange={handleChange}
+        placeholder="Industry"
+        required
+      />
+      <input
+        type="text"
+        name="country"
+        value={customerData.country}
+        onChange={handleChange}
+        placeholder="Country"
+        required
+      />
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? "Adding..." : "Add Customer"}
+      </button>
+    </form>
+  );
+}
+
+export default CustomerForm;
+This setup assumes you have an API endpoint to add customers and you're using RTK Query for API interactions. Adjust the endpoints and logic according to your backend API structure and requirements.
+
+User
+export const customersApiSlice = apiSlice.injectEndpoints({
+  endpoints: (builder) => ({
+    addCustomer: builder.mutation({
+      query: (data) => ({
+        url: `${CUSTOMERS_URL}/add`, // Assuming this endpoint for adding a customer
+        method: "POST",
+        body: data,
+      }),
+    }),
+    // Add other endpoints as needed, e.g., fetch customers, update customer, delete customer, etc.
+  }),
+});
+contains jwt token in authorization
+ChatGPT
+If your API requires a JWT token in the authorization header for authentication, you can modify the RTK Query endpoint to include this token. Here's how you can adjust the addCustomer endpoint to include the JWT token:
+
+javascript
+Copy code
+import { apiSlice } from "./apiSlice";
+
+const CUSTOMERS_URL = "/api/customers"; // Define your customers endpoint
+
+export const customersApiSlice = apiSlice.injectEndpoints({
+  endpoints: (builder) => ({
+    addCustomer: builder.mutation({
+      query: (data) => ({
+        url: `${CUSTOMERS_URL}/add`, // Assuming this endpoint for adding a customer
+        method: "POST",
+        body: data,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`, // Assuming you store the JWT token in localStorage
+        },
+      }),
+    }),
+    // Add other endpoints as needed, e.g., fetch customers, update customer, delete customer, etc.
+  }),
+});
+
+export const { useAddCustomerMutation } = customersApiSlice;
+
+
+
+
+
