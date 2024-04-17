@@ -13,7 +13,7 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [login, { isLoading }] = useLoginMutation();
+  const [login, { isLoading }] = useLoginMutation(); //note if you console.log() it returns const [loginMutationFunction, { loading, isLoading, error, isError, data, }] = useLoginMutation();
 
   const { userInfo } = useSelector((state) => state.auth);
 
